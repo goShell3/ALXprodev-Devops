@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Ensure the JSON file exists
+if [ ! -f "data.json" ]; then
+  echo "data.json not found. Run the API fetch script first."
+  exit 1
+fi
+
+# Extract data using jq
+name=$(jq -r '.name' data.json | sed 's/.*/\u&/')
+height_dm=$(jq -r '.height' data.json)     # in decimetres
+weight_hg=$(jq -r '.weight' data.json)     # in hectograms
+type=$(jq -r '.types[] | select(.slot == 1) | .type.name' data.json | sed 's/.*/\u&/')
+
+# Convert to meters and kilograms
+height_m=$(awk -v h="$height_dm" 'BEGIN { printf "%.1f", h / 10 }')
+weight_kg=$(awk -v w="$weight_hg" 'BEGIN { printf "%.0f", w / 10 }')
+
+# Print formatted result
+echo "$name is of type $type, weighs ${weight_kg}kg, and is ${height_m}m tall."
