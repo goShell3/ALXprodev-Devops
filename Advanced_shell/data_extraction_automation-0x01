@@ -1,30 +1,32 @@
 #!/bin/bash
 
 # Ensure the JSON file exists
-if [ ! -f "./data.json" ]; then
+if [ ! -f "data.json" ]; then
   echo "data.json not found. Run the API fetch script first."
   exit 1
 fi
 
-# Extract values using jq and ensure they're valid
+# Extract values using jq
 name=$(jq -r '.name' data.json)
 type=$(jq -r '.types[0].type.name' data.json)
 weight=$(jq -r '.weight' data.json)
 height=$(jq -r '.height' data.json)
 
-# Check if any value is empty
+# Check for missing values
 if [[ -z "$name" || -z "$type" || -z "$weight" || -z "$height" ]]; then
-  echo "Error: Missing data in JSON file."
+  echo "Error: Missing data in data.json"
   exit 1
 fi
 
-# Format name and type (capitalize)
+# Capitalize name and type
 name=$(echo "$name" | sed 's/.*/\u&/')
 type=$(echo "$type" | sed 's/.*/\u&/')
 
-# Convert units (weight in hectograms to kg, height in decimeters to meters)
+# Convert to kg and m
 formatted_weight=$(awk -v w="$weight" 'BEGIN { printf "%.0f", w / 10 }')
 formatted_height=$(awk -v h="$height" 'BEGIN { printf "%.1f", h / 10 }')
 
-# Final output
-echo "${name} is of type ${type}, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
+# Echo final output
+echo "$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
+
+# "$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
