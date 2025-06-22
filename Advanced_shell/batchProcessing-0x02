@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# Directory to store all fetched JSON files
+# Directory to save Pokémon data
 DATA_DIR="pokemon_data"
 mkdir -p "$DATA_DIR"
+
+# Error log file
+ERROR_LOG="errors.log"
+> "$ERROR_LOG"  # Clear previous log
 
 # List of Pokémon to fetch
 POKEMON_LIST=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
@@ -13,20 +17,26 @@ BASE_URL="https://pokeapi.co/api/v2/pokemon"
 # Loop through each Pokémon
 for pokemon in "${POKEMON_LIST[@]}"; do
   echo "Fetching data for $pokemon..."
-
-  # Save output file path
   OUTPUT_FILE="$DATA_DIR/${pokemon}.json"
 
-  # Make API request and save to file
-  curl -s -f "$BASE_URL/$pokemon" -o "$OUTPUT_FILE"
+  # Retry logic
+  success=false
+  for attempt in {1..3}; do
+    curl -s -f "$BASE_URL/$pokemon" -o "$OUTPUT_FILE"
+    if [ $? -eq 0 ]; then
+      echo "Saved data to $OUTPUT_FILE ✅"
+      success=true
+      break
+    else
+      echo "Attempt $attempt failed for $pokemon."
+      sleep 1  # Wait before retrying
+    fi
+  done
 
-  # Check if curl was successful
-  if [ $? -eq 0 ]; then
-    echo "Saved data to $OUTPUT_FILE ✅"
-  else
-    echo "Failed to fetch data for $pokemon ❌"
+  if [ "$success" = false ]; then
+    echo "Failed to fetch data for $pokemon after 3 attempts ❌" | tee -a "$ERROR_LOG"
   fi
 
-  # Delay to avoid hitting API rate limits
+  # Delay between Pokémon to avoid rate limits
   sleep 1
 done
